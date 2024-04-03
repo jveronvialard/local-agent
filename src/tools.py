@@ -90,16 +90,10 @@ def convert_from_mp3_to_wav(
         output_filename = "{filename} - {cutoff}s.wav".format(
             filename=filename[:-4], cutoff=cutoff
         )
-        # command = 'ffmpeg -ss 0 -t {cutoff} -y -i "{filename}" -ar 16000 -ac 1 -c:a pcm_s16le "{output_filename}"'.format(
-        #     cutoff=cutoff, filename=filename, output_filename=output_filename
-        # )
         command = f'ffmpeg -ss 0 -t {cutoff} -y -i "{filename}" -ar 16000 -ac 1 -c:a pcm_s16le '
         command += f'"{output_filename}"'
     else:
         output_filename = "{filename}.wav".format(filename=filename[:-4])
-        # command = 'ffmpeg -y -i "{filename}" -ar 16000 -ac 1 -c:a pcm_s16le "{output_filename}"'.format(
-        #     filename=filename, output_filename=output_filename
-        # )
         command = f'ffmpeg -y -i "{filename}" -ar 16000 -ac 1 -c:a pcm_s16le "{output_filename}"'
     if verbose is False:
         command += " -hide_banner -loglevel error"
@@ -125,17 +119,18 @@ def get_wav_transcript(filename: str, asr_model: str = "whisper") -> str:
         return "Error: filename should be a WAV file."
 
     if os.path.isfile(filename) is False:
-        # return "RuntimeError: File {filename} not found".format(filename=filename)
         return f"RuntimeError: File {filename} not found"
 
     if asr_model == "whisper":
-        from whispercpp import Whisper
+        from faster_whisper import WhisperModel
 
-        asr_model = Whisper("base")
-
-        result = asr_model.transcribe(filename)
-        text = asr_model.extract_text(result)
-        return "".join(text)
+        asr_model = WhisperModel("base", device="cpu", compute_type="int8")
+        segments, _ = asr_model.transcribe(
+            filename,
+            beam_size=5,
+        )
+        segments = list(segments)
+        return "".join([s.text for s in segments])
     else:
         raise ValueError
 
