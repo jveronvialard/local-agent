@@ -11,4 +11,4 @@ tiktoken==0.6.0
 urllib3==2.2.1
 requests==2.31.0
 tqdm==4.66.2
-whispercpp==1.0
+whisper_cpp_python==0.2.0
